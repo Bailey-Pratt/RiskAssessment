@@ -1,21 +1,16 @@
-cmake_minimum_required(VERSION 3.10)
-project(CyberRiskAPI)
+cmake_minimum_required(VERSION 3.5.0)
+project(MyCMakeproject VERSION 0.1.0 LANGUAGES CXX) 
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# Add MySQL paths specifically for Mac
+set(MYSQL_DIR "/usr/local/mysql/")
+set(MYSQL_INCLUDE_DIRS "/usr/local/include/mysql")
+set(MYSQL_LIBRARY_DIRS "/usr/local/lib")
 
-# Add PostgreSQL paths for Mac
-set(PostgreSQL_INCLUDE_DIRS "/usr/local/opt/libpq/include")
-set(PostgreSQL_LIBRARY_DIRS "/usr/local/opt/libpq/lib")
+include_directories(${MYSQL_INCLUDE_DIRS})
+link_directories(${MYSQL_LIBRARY_DIRS})
 
-find_package(Drogon REQUIRED)
+add_executable(RiskAssessment main-3.cpp index.html)
+target_link_libraries(RiskAssessment mysqlclient)
+configure_file(${CMAKE_SOURCE_DIR}/index.html ${CMAKE_BINARY_DIR}/index.html COPYONLY)
 
-add_executable(cyber_risk_api
-    main.cpp
-    backend.cpp
-)
-
-target_include_directories(cyber_risk_api PRIVATE ${PostgreSQL_INCLUDE_DIRS})
-target_link_directories(cyber_risk_api PRIVATE ${PostgreSQL_LIBRARY_DIRS})
-target_link_libraries(cyber_risk_api PRIVATE Drogon::Drogon pq)
+set_property(TARGET RiskAssessment PROPERTY CXX_STANDARD 23)
