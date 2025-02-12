@@ -1,66 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server Test</title>
-    <style>
-        .container {
-            text-align: center;
-            padding-top: 50px;
-        }
-        input {
-            padding: 8px;
-            margin: 10px;
-        }
-        button {
-            padding: 8px 16px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .message {
-            margin-top: 20px;
-            color: #666;
-        }
-    </style>
-</head>
+<html>
 <body>
-    <div class="container">
-        <h1>Hello World!</h1>
-        <form id="userForm">
-            <input type="text" id="username" placeholder="Enter username" required>
-            <button type="submit">Submit</button>
-        </form>
-        <div id="message" class="message"></div>
-    </div>
-
-    <script>
-        document.getElementById('userForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const messageDiv = document.getElementById('message');
-            
-            try {
-                const response = await fetch('/signup', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username }),
-                });
-                
-                const data = await response.json();
-                messageDiv.textContent = data;
-                
-                if (response.ok) {
-                    document.getElementById('username').value = '';
-                }
-            } catch (error) {
-                messageDiv.textContent = 'Error: ' + error.message;
-            }
-        });
-    </script>
+    <form method="post">
+        <input type="text" name="username" placeholder="Enter username">
+        <input type="submit" value="Submit">
+    </form>
 </body>
 </html>
