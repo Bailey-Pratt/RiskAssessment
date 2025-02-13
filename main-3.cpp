@@ -132,13 +132,13 @@ int main() {
     std::cout << "Server running on port 8080\n";
 
     char buffer[4096] = {0};
-    std::string html_content = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n"
-                              "<html><body>"
-                              "<form method='post'>"
-                              "<input type='text' name='username'>"
-                              "<input type='submit'>"
-                              "</form>"
-                              "</body></html>";
+std::string response_headers = "HTTP/1.1 200 OK\n"
+                             "Content-Type: application/json\n"
+                             "Access-Control-Allow-Origin: http://localhost:3000\n"
+                             "Access-Control-Allow-Methods: POST, GET, OPTIONS\n"
+                             "Access-Control-Allow-Headers: Content-Type\n\n";
+
+std::string success_response = response_headers + "{\"status\":\"success\"}";
 
     while(true) {
         int new_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen);
@@ -151,7 +151,18 @@ int main() {
             handle_post(conn, request);
         }
 
-        send(new_socket, html_content.c_str(), html_content.length(), 0);
+        if (request.find("OPTIONS") == 0) {
+    // Handle preflight requests
+    send(new_socket, response_headers.c_str(), response_headers.length(), 0);
+} else if (request.find("POST") == 0) {
+    // Handle POST requests
+    handle_post(conn, request);
+    send(new_socket, success_response.c_str(), success_response.length(), 0);
+} else {
+    // Handle other requests
+    send(new_socket, success_response.c_str(), success_response.length(), 0);
+}
+
         close(new_socket);
     }
 
