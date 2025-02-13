@@ -9,8 +9,7 @@ set(MYSQL_LIBRARY_DIRS "/usr/local/lib")
 include_directories(${MYSQL_INCLUDE_DIRS})
 link_directories(${MYSQL_LIBRARY_DIRS})
 
-add_executable(RiskAssessment main-3.cpp index.html)
+add_executable(RiskAssessment main-3.cpp)
 target_link_libraries(RiskAssessment mysqlclient)
-configure_file(${CMAKE_SOURCE_DIR}/index.html ${CMAKE_BINARY_DIR}/index.html COPYONLY)
 
 set_property(TARGET RiskAssessment PROPERTY CXX_STANDARD 23)
