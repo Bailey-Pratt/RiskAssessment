@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import Dashboard from './dashboard';
-
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Dashboard from './Dashboard';
+import './App.css';
 
 function App() {
   const [isLogin, setIsLogin] = useState(true);
@@ -47,94 +48,86 @@ function App() {
 
   if (isLoggedIn) {
     return (
-      <Dashboard 
-        username={username} 
-        onLogout={() => {
-          setIsLoggedIn(false);
-          setUserId(null);
-          setUsername('');
-          setPassword('');
-        }} 
-      />
+      <Router>
+        <Routes>
+          <Route path="/dashboard/*" element={
+            <Dashboard
+              username={username}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                setUserId(null);
+                setUsername('');
+                setPassword('');
+              }}
+            />
+          } />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Router>
     );
   }
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-6">
-      <div className="bg-white bg-opacity-95 backdrop-blur-lg rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-block p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mb-4">
-            <div className="bg-white rounded-xl p-4">
-              <h2 className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 text-2xl font-bold">
-                Risk Assessment Tool
-              </h2>
+    <div className="login-container">
+      <div className="login-card">
+        <div className="logo-container">
+          <div className="logo-inner">
+            <div className="logo-text">
+              <h2>Risk Assessment Tool</h2>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            {isLogin ? 'Welcome Back!' : 'Create Account'}
-          </h1>
-          <p className="text-gray-600 mt-2">
-            {isLogin ? 'Please sign in to continue' : 'Sign up for a new account'}
-          </p>
+          <h1>{isLogin ? 'Welcome Back!' : 'Create Account'}</h1>
+          <p>{isLogin ? 'Please sign in to continue' : 'Sign up for a new account'}</p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                required
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all duration-200"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all duration-200"
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="form-container">
+          <div className="input-group">
+            <label className="input-label">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              required
+              className="input-field"
+            />
+          </div>
+          
+          <div className="input-group">
+            <label className="input-label">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              className="input-field"
+            />
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-6 rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="submit-button"
           >
             {isLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
           </button>
         </form>
 
         {message && (
-          <div className={`mt-6 p-4 rounded-xl ${
-            message.includes('success') 
-              ? 'bg-green-50 text-green-800 border border-green-100' 
-              : 'bg-red-50 text-red-800 border border-red-100'
-          }`}>
+          <div className={`message ${message.includes('success') ? 'success' : 'error'}`}>
             {message}
           </div>
         )}
 
-        <div className="mt-8 text-center">
+        <div className="toggle-auth">
           <button
             onClick={() => {
               setIsLogin(!isLogin);
               setMessage('');
             }}
-            className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 font-semibold hover:from-blue-600 hover:to-purple-600 transition-colors duration-200"
+            className="toggle-button"
           >
             {isLogin 
               ? "Don't have an account? Sign up" 
