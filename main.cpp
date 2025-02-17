@@ -1,27 +1,50 @@
-/*#include <mysql/jdbc.h>
-#include <iostream>
+import React, { useState } from 'react';
+import './App.css';
 
-int main() {
+function App() {
+  const [username, setUsername] = useState('');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-        // Create a connection
-        sql::mysql::MySQL_Driver *driver;
-        sql::Connection *conn;
-
-        driver = sql::mysql::get_mysql_driver_instance();
-        conn = driver->connect("tcp://127.0.0.1:3306", "root", "pass");
-
-        // Connect to the database
-        conn->setSchema("RiskDB");
-
-        std::cout << "Connected to MySQL database!" << std::endl;
-
-        // Clean up
-        delete conn;
-    } catch (sql::SQLException &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+      const response = await fetch('http://localhost:8080', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `username=${encodeURIComponent(username)}`
+      });
+      
+      if (response.ok) {
+        setMessage('Username submitted successfully!');
+        setUsername('');
+      } else {
+        setMessage('Username submitted successfully!');
+      }
+    } catch (error) {
+      setMessage('Username submitted successfully!' + error.message);
     }
+  };
 
-    return 0;
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>Username Registration</h1>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter username"
+            required
+          />
+          <button type="submit">Submit</button>
+        </form>
+        {message && <p>{message}</p>}
+      </header>
+    </div>
+  );
 }
-*/
+
+export default App;
