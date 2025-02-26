@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './Dashboard';
+import CompanyList from './CompanyList';
 import './App.css';
+import './CompanyList.css';
 
 function App() {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -18,12 +21,19 @@ function App() {
     const endpoint = isLogin ? '/login' : '/register';
     
     try {
+      let formBody = `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+      
+      // Add email only for registration
+      if (!isLogin) {
+        formBody += `&email=${encodeURIComponent(email)}`;
+      }
+      
       const response = await fetch(`http://localhost:8080${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+        body: formBody
       });
       
       const data = await response.json();
@@ -58,6 +68,7 @@ function App() {
                 setUserId(null);
                 setUsername('');
                 setPassword('');
+                setEmail('');
               }}
             />
           } />
@@ -93,6 +104,20 @@ function App() {
               className="input-field"
             />
           </div>
+          
+          {!isLogin && (
+            <div className="input-group">
+              <label className="input-label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="input-field"
+              />
+            </div>
+          )}
           
           <div className="input-group">
             <label className="input-label">Password</label>
@@ -134,6 +159,9 @@ function App() {
               : 'Already have an account? Sign in'}
           </button>
         </div>
+        
+        {/* Company list component */}
+        <CompanyList />
       </div>
     </div>
   );
