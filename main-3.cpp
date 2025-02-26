@@ -1,82 +1,10 @@
-#include <mysql.h>
-#include <iostream>
-#include <string>
+#include "common.h"
+#include "register_handler.h"
+#include "login_handler.h"
+#include "post_handler.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-
-std::string read_complete_request(int socket) {
-    char buffer[4096] = {0};
-    std::string complete_request;
-    
-    // Read initial data
-    ssize_t bytes_read = read(socket, buffer, sizeof(buffer));
-    if (bytes_read > 0) {
-        complete_request.append(buffer, bytes_read);
-        
-        // Find Content-Length
-        std::string content_length_header = "Content-Length: ";
-        size_t pos = complete_request.find(content_length_header);
-        if (pos != std::string::npos) {
-            pos += content_length_header.length();
-            size_t end_pos = complete_request.find("\r\n", pos);
-            int content_length = std::stoi(complete_request.substr(pos, end_pos - pos));
-            
-            // Find body start
-            size_t body_start = complete_request.find("\r\n\r\n");
-            if (body_start != std::string::npos) {
-                body_start += 4;  // Move past \r\n\r\n
-                
-                // Read remaining data if needed
-                while (complete_request.length() - body_start < content_length) {
-                    memset(buffer, 0, sizeof(buffer));
-                    bytes_read = read(socket, buffer, sizeof(buffer));
-                    if (bytes_read > 0) {
-                        complete_request.append(buffer, bytes_read);
-                    }
-                }
-            }
-        }
-    }
-    return complete_request;
-}
-
-void handle_post(MYSQL* conn, const std::string& request) {
-    // Find the end of headers (double newline)
-    size_t header_end = request.find("\r\n\r\n");
-    if (header_end != std::string::npos) {
-        // Get the body of the request
-        std::string body = request.substr(header_end + 4);
-        std::cout << "Request body: " << body << std::endl;
-
-        // Parse username from body
-        size_t pos = body.find("username=");
-        if (pos != std::string::npos) {
-            std::string username = body.substr(pos + 9);
-            std::cout << "Found username: " << username << std::endl;
-            
-            // Create and execute query
-            std::string query = "INSERT INTO users (username) VALUES ('" + username + "')";
-            if (mysql_query(conn, query.c_str()) == 0) {
-                std::cout << "Successfully stored username: " << username << std::endl;
-                
-                // Verify the insertion
-                if (mysql_query(conn, "SELECT * FROM users ORDER BY id DESC LIMIT 1") == 0) {
-                    MYSQL_RES *result = mysql_store_result(conn);
-                    if (result != NULL) {
-                        MYSQL_ROW row = mysql_fetch_row(result);
-                        if (row != NULL) {
-                            std::cout << "Last inserted username from DB: " << row[1] << std::endl;
-                        }
-                        mysql_free_result(result);
-                    }
-                }
-            } else {
-                std::cout << "Database error: " << mysql_error(conn) << std::endl;
-            }
-        }
-    }
-}
 
 int main() {
     MYSQL *conn = mysql_init(NULL);
@@ -104,16 +32,47 @@ int main() {
         }
     }
 
-    // Verify users table exists
+    // Verify users table exists with correct structure
     if (mysql_query(conn, "SHOW TABLES LIKE 'users'") == 0) {
         MYSQL_RES *result = mysql_store_result(conn);
         if (mysql_num_rows(result) > 0) {
             std::cout << "Users table exists" << std::endl;
+            
+            // Check if we need to update the table structure
+            if (mysql_query(conn, "SHOW COLUMNS FROM users") == 0) {
+                MYSQL_RES *columns_result = mysql_store_result(conn);
+                bool has_password = false;
+                bool has_email = false;
+                
+                MYSQL_ROW column_row;
+                while ((column_row = mysql_fetch_row(columns_result))) {
+                    if (std::string(column_row[0]) == "password") {
+                        has_password = true;
+                    }
+                    if (std::string(column_row[0]) == "email") {
+                        has_email = true;
+                    }
+                }
+                
+                mysql_free_result(columns_result);
+                
+                if (!has_password || !has_email) {
+                    std::cout << "Updating users table structure..." << std::endl;
+                    if (!has_password) {
+                        mysql_query(conn, "ALTER TABLE users ADD COLUMN password VARCHAR(100) NOT NULL DEFAULT ''");
+                    }
+                    if (!has_email) {
+                        mysql_query(conn, "ALTER TABLE users ADD COLUMN email VARCHAR(100) NOT NULL DEFAULT ''");
+                    }
+                }
+            }
         } else {
             std::cout << "Creating users table..." << std::endl;
             mysql_query(conn, "CREATE TABLE IF NOT EXISTS users ("
                             "id INT AUTO_INCREMENT PRIMARY KEY,"
                             "username VARCHAR(50) NOT NULL,"
+                            "password VARCHAR(100) NOT NULL,"
+                            "email VARCHAR(100) NOT NULL,"
                             "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
         }
         mysql_free_result(result);
@@ -131,37 +90,32 @@ int main() {
     listen(server_fd, 3);
     std::cout << "Server running on port 8080\n";
 
-    char buffer[4096] = {0};
-std::string response_headers = "HTTP/1.1 200 OK\n"
-                             "Content-Type: application/json\n"
-                             "Access-Control-Allow-Origin: http://localhost:3000\n"
-                             "Access-Control-Allow-Methods: POST, GET, OPTIONS\n"
-                             "Access-Control-Allow-Headers: Content-Type\n\n";
-
-std::string success_response = response_headers + "{\"status\":\"success\"}";
+    std::string success_response = RESPONSE_HEADERS + "{\"status\":\"success\"}";
 
     while(true) {
         int new_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen);
         
-        // Replace the single read with complete request reading
+        // Read the complete request
         std::string request = read_complete_request(new_socket);
         
-        if (request.find("POST") == 0) {
+        if (request.find("OPTIONS") == 0) {
+            // Handle preflight requests
+            send(new_socket, RESPONSE_HEADERS.c_str(), RESPONSE_HEADERS.length(), 0);
+        } else if (request.find("POST /register") == 0) {
+            // Handle registration
+            handle_register(conn, request, new_socket);
+        } else if (request.find("POST /login") == 0) {
+            // Handle login
+            handle_login(conn, request, new_socket);
+        } else if (request.find("POST") == 0) {
+            // Handle other POST requests
             std::cout << "\nFull request:\n" << request << "\nEnd of request\n";
             handle_post(conn, request);
+            send(new_socket, success_response.c_str(), success_response.length(), 0);
+        } else {
+            // Handle other requests
+            send(new_socket, success_response.c_str(), success_response.length(), 0);
         }
-
-        if (request.find("OPTIONS") == 0) {
-    // Handle preflight requests
-    send(new_socket, response_headers.c_str(), response_headers.length(), 0);
-} else if (request.find("POST") == 0) {
-    // Handle POST requests
-    handle_post(conn, request);
-    send(new_socket, success_response.c_str(), success_response.length(), 0);
-} else {
-    // Handle other requests
-    send(new_socket, success_response.c_str(), success_response.length(), 0);
-}
 
         close(new_socket);
     }
