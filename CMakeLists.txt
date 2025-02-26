@@ -16,6 +16,7 @@ add_executable(RiskAssessment
     login_handler.cpp
     post_handler.cpp
     companies_handler.cpp
+    password_analyzer.cpp
 )
 
 target_link_libraries(RiskAssessment mysqlclient)
