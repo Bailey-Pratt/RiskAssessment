@@ -3,6 +3,7 @@
 #include "login_handler.h"
 #include "post_handler.h"
 #include "companies_handler.h"
+#include "password_analyzer.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -111,6 +112,9 @@ int main() {
         } else if (request.find("POST /login") == 0) {
             // Handle login
             handle_login(conn, request, new_socket);
+        } else if (request.find("POST /analyze-password") == 0) {
+            // Handle password analysis
+            handle_analyze_password(request, new_socket);
         } else if (request.find("POST") == 0) {
             // Handle other POST requests
             std::cout << "\nFull request:\n" << request << "\nEnd of request\n";
