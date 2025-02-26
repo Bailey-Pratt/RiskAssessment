@@ -2,6 +2,7 @@
 #include "register_handler.h"
 #include "login_handler.h"
 #include "post_handler.h"
+#include "companies_handler.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -101,6 +102,9 @@ int main() {
         if (request.find("OPTIONS") == 0) {
             // Handle preflight requests
             send(new_socket, RESPONSE_HEADERS.c_str(), RESPONSE_HEADERS.length(), 0);
+        } else if (request.find("GET /companies") == 0) {
+            // Handle get companies request
+            handle_get_companies(conn, new_socket);
         } else if (request.find("POST /register") == 0) {
             // Handle registration
             handle_register(conn, request, new_socket);
